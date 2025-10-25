@@ -12,6 +12,10 @@ const NavigationContainer = styled.nav`
   border-top: 1px solid rgba(255, 255, 255, 0.2);
   padding: 1rem;
   z-index: 1000;
+
+  @media (min-width: 769px) {
+    display: none; /* hide bottom nav on wider screens, use sidebar instead */
+  }
 `;
 
 const NavigationContent = styled.div`
