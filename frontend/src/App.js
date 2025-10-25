@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 import { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import GlobalStyle from './styles/GlobalStyle';
 
 // Components
 import Header from './components/Header';
@@ -12,49 +13,49 @@ import VoiceInterface from './components/VoiceInterface';
 import ServicesList from './components/ServicesList';
 import DocumentManager from './components/DocumentManager';
 import Navigation from './components/Navigation';
-
-// Theme
-const theme = {
-  colors: {
-    primary: '#2E8B57',
-    secondary: '#FF6B35',
-    accent: '#4ECDC4',
-    background: '#F8F9FA',
-    text: '#2C3E50',
-    white: '#FFFFFF',
-    gray: '#6C757D',
-    lightGray: '#E9ECEF',
-    success: '#28A745',
-    warning: '#FFC107',
-    danger: '#DC3545',
-    info: '#17A2B8'
-  },
-  fonts: {
-    primary: "'Inter', sans-serif",
-    swahili: "'Inter', sans-serif"
-  },
-  breakpoints: {
-    mobile: '768px',
-    tablet: '1024px',
-    desktop: '1200px'
-  }
-};
+import Sidebar from './components/Sidebar';
+import theme from './theme';
 
 const AppContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: ${props => `linear-gradient(135deg, 
+    ${props.theme.colors.primary}20 0%, 
+    ${props.theme.colors.secondary}20 50%,
+    ${props.theme.colors.accent}20 100%
+  )`};
   display: flex;
   flex-direction: column;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60vh;
+    background: ${props => props.theme.colors.gradient.primary};
+    clip-path: polygon(0 0, 100% 0, 100% 60%, 0% 100%);
+    z-index: 0;
+  }
+`;
+
+const Inner = styled.div`
+  flex: 1;
+  display: flex;
+  gap: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
+  position: relative;
+  z-index: 1;
 `;
 
 const MainContent = styled.main`
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
 `;
 
 const WelcomeSection = styled(motion.div)`
@@ -272,20 +273,27 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
+      <GlobalStyle />
       <Router>
         <AppContainer>
           <Header />
-          <MainContent>
-            {renderContent()}
-          </MainContent>
+          <Inner>
+            <Sidebar setCurrentView={setCurrentView} />
+            <MainContent>
+              {renderContent()}
+            </MainContent>
+          </Inner>
           <Navigation currentView={currentView} setCurrentView={setCurrentView} />
           <Toaster 
             position="top-right"
             toastOptions={{
               duration: 4000,
               style: {
-                background: '#363636',
-                color: '#fff',
+                background: theme.colors.surface,
+                color: theme.colors.text,
+                borderRadius: '8px',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                border: `1px solid ${theme.colors.lightGray}`,
               },
             }}
           />
