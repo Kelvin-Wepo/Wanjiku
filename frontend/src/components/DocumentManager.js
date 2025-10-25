@@ -3,16 +3,70 @@ import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { ethers } from 'ethers';
+import DocumentVerification from '../abi/DocumentVerification.json';
+
+// Styled Components
+const WalletSection = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+`;
+
+const WalletAddress = styled.span`
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: white;
+  margin-left: 1rem;
+`;
+
+const WalletButton = styled(motion.button)`
+  padding: 0.8rem 1.5rem;
+  background: ${props => props.connected ? props.theme.colors.success : props.theme.colors.gradient.primary};
+  color: ${props => props.theme.colors.white};
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
 
 const DocumentContainer = styled.div`
   max-width: 1000px;
   margin: 0 auto;
+  padding: 2rem;
 `;
 
 const DocumentHeader = styled.div`
   text-align: center;
-  margin-bottom: 2rem;
-  color: white;
+  margin-bottom: 3rem;
+  color: ${props => props.theme.colors.text};
+  
+  h1 {
+    background: ${props => props.theme.colors.gradient.primary};
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
 `;
 
 const DocumentTitle = styled.h2`
@@ -28,13 +82,18 @@ const DocumentSubtitle = styled.p`
 `;
 
 const UploadSection = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 15px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: ${props => props.theme.colors.surface};
+  border-radius: 16px;
+  padding: 2.5rem;
+  margin-bottom: 2.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid ${props => props.theme.colors.lightGray};
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
 `;
 
 const UploadArea = styled(motion.div)`
@@ -92,6 +151,8 @@ const DocumentTypeSelect = styled.select`
   }
 `;
 
+
+
 const UploadButton = styled(motion.button)`
   width: 100%;
   padding: 1rem;
@@ -117,28 +178,28 @@ const UploadButton = styled(motion.button)`
 `;
 
 const DocumentsList = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 15px;
-  padding: 1.5rem;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: ${props => props.theme.colors.surface};
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid ${props => props.theme.colors.lightGray};
 `;
 
 const DocumentItem = styled(motion.div)`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem;
+  padding: 1.25rem;
   border: 1px solid ${props => props.theme.colors.lightGray};
-  border-radius: 10px;
+  border-radius: 12px;
   margin-bottom: 1rem;
-  background: white;
+  background: ${props => props.theme.colors.surface};
   transition: all 0.3s ease;
   
   &:hover {
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     transform: translateY(-2px);
+    border-color: ${props => props.theme.colors.primary};
   }
 `;
 
@@ -193,20 +254,22 @@ const DocumentActions = styled.div`
 `;
 
 const ActionButton = styled(motion.button)`
-  padding: 0.5rem 1rem;
+  padding: 0.625rem 1.25rem;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   
   &.download {
-    background: ${props => props.theme.colors.info};
-    color: white;
+    background: ${props => props.theme.colors.gradient.primary};
+    color: ${props => props.theme.colors.white};
   }
   
   &.verify {
-    background: ${props => props.theme.colors.success};
+    background: ${props => props.theme.colors.gradient.accent};
     color: white;
   }
   
@@ -376,6 +439,45 @@ const DocumentManager = () => {
     }
   };
 
+  const handleNotarize = async (document) => {
+    if (!signer) {
+      toast.error('Tafadhali unganisha pochi yako kwanza');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
+      const contract = new ethers.Contract(contractAddress, DocumentVerification.abi, signer);
+      
+      toast.loading('Inathibitisha hati kwenye blockchain...');
+      const tx = await contract.notarizeDocument(document.id, document.file_hash);
+      await tx.wait();
+      
+      // Update backend with transaction hash
+      const response = await axios.post('/api/blockchain/verifications/notarize_document/', {
+        document_id: document.id,
+        tx_hash: tx.hash
+      });
+
+      if (response.data.success) {
+        toast.success('Hati imethibitishwa kwenye blockchain!');
+        fetchDocuments();
+      } else {
+        toast.error('Haikuwezekana kuthibitisha kwenye blockchain');
+      }
+    } catch (error) {
+      console.error('Error notarizing document:', error);
+      if (error.code === 4001) {
+        toast.error('Umetengua ombi la MetaMask');
+      } else {
+        toast.error('Kuna tatizo la kuthibitisha kwenye blockchain');
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'verified': return 'Imethibitishwa';
@@ -399,6 +501,73 @@ const DocumentManager = () => {
     }
   };
 
+
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [signer, setSigner] = useState(null);
+
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      toast.error('Tafadhali weka MetaMask ili kutumia blockchain');
+      return;
+    }
+
+    try {
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const currentSigner = provider.getSigner();
+      const address = await currentSigner.getAddress();
+      
+      setSigner(currentSigner);
+      setWalletAddress(address);
+      setWalletConnected(true);
+      toast.success('Pochi imeunganishwa kwa mafanikio!');
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+      toast.error('Imeshindwa kuunganisha pochi');
+    }
+  };
+
+  useEffect(() => {
+    const checkWalletConnection = async () => {
+      if (window.ethereum) {
+        try {
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const accounts = await provider.listAccounts();
+          if (accounts.length > 0) {
+            const currentSigner = provider.getSigner();
+            const address = await currentSigner.getAddress();
+            setSigner(currentSigner);
+            setWalletAddress(address);
+            setWalletConnected(true);
+          }
+        } catch (error) {
+          console.error('Error checking wallet connection:', error);
+        }
+      }
+    };
+
+    checkWalletConnection();
+
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', (accounts) => {
+        if (accounts.length === 0) {
+          setWalletConnected(false);
+          setWalletAddress('');
+          setSigner(null);
+        } else {
+          checkWalletConnection();
+        }
+      });
+    }
+
+    return () => {
+      if (window.ethereum) {
+        window.ethereum.removeAllListeners('accountsChanged');
+      }
+    };
+  }, []);
+
   if (loading) {
     return (
       <DocumentContainer>
@@ -419,6 +588,23 @@ const DocumentManager = () => {
     <DocumentContainer>
       <DocumentHeader>
         <DocumentTitle>Usimamizi wa Hati</DocumentTitle>
+        <WalletSection>
+          <WalletButton
+            onClick={connectWallet}
+            connected={walletConnected}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            {walletConnected ? (
+              <>
+                <span>Imeunganishwa</span>
+                <WalletAddress>{`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}</WalletAddress>
+              </>
+            ) : (
+              'Unganisha Pochi'
+            )}
+          </WalletButton>
+        </WalletSection>
         <DocumentSubtitle>
           Pakia, thibitisha na usimamize hati zako za kidijitali
         </DocumentSubtitle>
@@ -528,6 +714,16 @@ const DocumentManager = () => {
                       whileTap={{ scale: 0.95 }}
                     >
                       ✅ Thibitisha
+                    </ActionButton>
+                  )}
+                  {!document.blockchain_tx_hash && (
+                    <ActionButton
+                      className="verify"
+                      onClick={() => handleNotarize(document)}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      🔒 Thibitisha Kwenye Blockchain
                     </ActionButton>
                   )}
                   <ActionButton
