@@ -1,0 +1,83 @@
+name: Smart Contract CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'blockchain/**'
+      - '.github/workflows/smart-contract.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'blockchain/**'
+      - '.github/workflows/smart-contract.yml'
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  test:
+    name: Test Smart Contract
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: './blockchain/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: ./blockchain
+        run: npm ci
+      
+      - name: Compile contracts
+        working-directory: ./blockchain
+        run: npx hardhat compile
+      
+      - name: Run tests
+        working-directory: ./blockchain
+        run: npx hardhat test
+
+  deploy-testnet:
+    name: Deploy to Sepolia
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: './blockchain/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: ./blockchain
+        run: npm ci
+      
+      - name: Deploy to Sepolia
+        working-directory: ./blockchain
+        env:
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: |
+          npx hardhat run scripts/deploy.js --network sepolia
+          
+      - name: Verify Contract
+        working-directory: ./blockchain
+        env:
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: |
+          # Sleep to allow Etherscan to index the contract
+          sleep 30
+          # Get contract address from deployment
+          export CONTRACT_ADDRESS=$(cat .deployed-address)
+          npx hardhat verify --network sepolia $CONTRACT_ADDRESS

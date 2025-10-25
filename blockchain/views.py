@@ -106,6 +106,43 @@ class DocumentVerificationViewSet(viewsets.ModelViewSet):
         
         return Response(result)
 
+    @action(detail=False, methods=['post'])
+    def notarize_document(self, request):
+        """Notarize an existing uploaded document on-chain"""
+        document_id = request.data.get('document_id')
+        if not document_id:
+            return Response({'error': 'document_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            verification = DocumentVerification.objects.get(id=document_id, user=request.user)
+        except DocumentVerification.DoesNotExist:
+            return Response({'error': 'Document not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Call Ethereum service to store the document hash on-chain
+        from .services import EthereumService
+        eth_service = EthereumService()
+        result = eth_service.store_document_hash(verification.document_hash, {
+            'user_id': request.user.id,
+            'document_type': verification.document_type,
+            'ipfs_cid': getattr(verification, 'ipfs_cid', '')
+        })
+
+        if not result.get('success'):
+            return Response({'success': False, 'error': result.get('error')}, status=status.HTTP_400_BAD_REQUEST)
+
+        # create blockchain transaction record
+        BlockchainTransaction.objects.create(
+            document_verification=verification,
+            tx_hash=result.get('tx_hash'),
+            block_number=result.get('block_number'),
+            status='confirmed'
+        )
+
+        verification.blockchain_tx_hash = result.get('tx_hash')
+        verification.save()
+
+        return Response({'success': True, 'tx_hash': result.get('tx_hash')})
+
 
 class BlockchainTransactionViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for blockchain transactions"""

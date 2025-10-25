@@ -1,0 +1,16 @@
+{
+  "name": "wanjiku-blockchain",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@nomiclabs/hardhat-etherscan": "^3.1.8",
+    "ethers": "^5.7.2",
+    "hardhat": "^2.17.0"
+  },
+  "scripts": {
+    "build": "hardhat compile",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:hardhat": "hardhat run scripts/deploy.js --network hardhat"
+  }
+}

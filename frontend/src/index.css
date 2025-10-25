@@ -14,6 +14,14 @@ body {
   min-height: 100vh;
 }
 
+/* Layout tweaks: content container sits on a soft card for better readability */
+.app-card {
+  background: rgba(255,255,255,0.95);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
@@ -77,6 +85,10 @@ code {
 @media (max-width: 768px) {
   body {
     font-size: 14px;
+  }
+  /* ensure sidebar (desktop) is hidden on mobile */
+  .sidebar {
+    display: none !important;
   }
 }
 

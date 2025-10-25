@@ -27,6 +27,10 @@ services:
     environment:
       - DEBUG=True
       - DB_HOST=db
+      - DB_NAME=wanjiku_ai
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_PORT=5432
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       - db
